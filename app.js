@@ -140,9 +140,12 @@ function addExerciseItem(exercise = null) {
 
   nameInput.value = exercise?.name ?? "";
   nameInput.addEventListener("input", syncActiveExercises);
-  weightInput.addEventListener("input", syncActiveExercises);
-  repsInput.addEventListener("input", syncActiveExercises);
-  countInput.addEventListener("input", syncActiveExercises);
+  populateSelect(weightInput, buildWeightOptions(), "重さ");
+  populateSelect(repsInput, buildSequentialOptions(1, 30), "回数");
+  populateSelect(countInput, buildSequentialOptions(1, 10), "セット数");
+  weightInput.addEventListener("change", syncActiveExercises);
+  repsInput.addEventListener("change", syncActiveExercises);
+  countInput.addEventListener("change", syncActiveExercises);
 
   removeExerciseButton.addEventListener("click", () => {
     item.remove();
@@ -202,6 +205,30 @@ function normalizeExerciseForEditor(exercise) {
     reps: sets[0].reps ?? "",
     count: sets.length,
   };
+}
+
+function populateSelect(select, values, placeholder) {
+  select.innerHTML = "";
+
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = placeholder;
+  select.appendChild(emptyOption);
+
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = String(value);
+    option.textContent = String(value);
+    select.appendChild(option);
+  });
+}
+
+function buildWeightOptions() {
+  return Array.from({ length: 41 }, (_, index) => index * 5);
+}
+
+function buildSequentialOptions(start, end) {
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
 function syncActiveExercises() {
