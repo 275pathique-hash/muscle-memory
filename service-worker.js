@@ -1,11 +1,11 @@
-const CACHE_NAME = "workout-log-app-v5";
+const CACHE_NAME = "workout-log-app-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./exercise.html",
-  "./styles.css?v=5",
-  "./app.js?v=5",
-  "./exercise.js?v=5",
+  "./styles.css?v=6",
+  "./app.js?v=6",
+  "./exercise.js?v=6",
   "./manifest.webmanifest",
   "./icon.svg",
 ];

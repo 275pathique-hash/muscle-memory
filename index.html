@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=5" />
+    <link rel="stylesheet" href="./styles.css?v=6" />
   </head>
   <body>
     <div class="app-shell">
@@ -56,6 +56,13 @@
               <span class="section-label">Exercises</span>
               <button id="add-exercise" class="mini-button" type="button">種目を追加</button>
             </div>
+            <div id="preset-list" class="preset-list">
+              <button class="preset-button" type="button" data-name="ベンチプレス">ベンチプレス</button>
+              <button class="preset-button" type="button" data-name="スクワット">スクワット</button>
+              <button class="preset-button" type="button" data-name="デッドリフト">デッドリフト</button>
+              <button class="preset-button" type="button" data-name="ショルダープレス">ショルダープレス</button>
+              <button class="preset-button" type="button" data-name="懸垂">懸垂</button>
+            </div>
             <div id="exercise-list" class="exercise-list"></div>
           </div>
         </section>
@@ -76,7 +83,7 @@
     <template id="exercise-template">
       <div class="exercise-item">
         <div class="exercise-item-header">
-          <input class="exercise-name" type="text" placeholder="種目名 例: ベンチプレス" />
+          <input class="exercise-name" list="exercise-name-list" type="text" placeholder="種目名 例: ベンチプレス" />
           <button class="remove-exercise" type="button">削除</button>
         </div>
         <div class="set-list"></div>
@@ -92,6 +99,16 @@
       </div>
     </template>
 
-    <script src="./app.js?v=5"></script>
+    <datalist id="exercise-name-list">
+      <option value="ベンチプレス"></option>
+      <option value="スクワット"></option>
+      <option value="デッドリフト"></option>
+      <option value="ショルダープレス"></option>
+      <option value="懸垂"></option>
+      <option value="ラットプルダウン"></option>
+      <option value="ダンベルプレス"></option>
+    </datalist>
+
+    <script src="./app.js?v=6"></script>
   </body>
 </html>

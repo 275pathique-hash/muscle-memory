@@ -20,6 +20,7 @@ const elements = {
   bodyweightInput: document.querySelector("#bodyweight-input"),
   exercisePanel: document.querySelector("#exercise-panel"),
   addExercise: document.querySelector("#add-exercise"),
+  presetButtons: [...document.querySelectorAll(".preset-button")],
   exerciseList: document.querySelector("#exercise-list"),
   historySelect: document.querySelector("#history-select"),
   historyEmpty: document.querySelector("#history-empty"),
@@ -42,6 +43,9 @@ function bootstrap() {
   elements.finishButton.addEventListener("click", finishSession);
   elements.bodyweightInput.addEventListener("input", handleBodyweightInput);
   elements.addExercise.addEventListener("click", () => addExerciseItem());
+  elements.presetButtons.forEach((button) => {
+    button.addEventListener("click", () => addPresetExercise(button.dataset.name));
+  });
   elements.historySelect.addEventListener("change", handleHistoryChange);
 
   state.selectedId = state.sessions[0]?.id ?? null;
@@ -150,6 +154,12 @@ function addExerciseItem(exercise = null) {
   const initialSets = exercise?.sets?.length ? exercise.sets : [{ weight: "", reps: "" }];
   initialSets.forEach((set) => addSetRow(setList, set));
   elements.exerciseList.appendChild(fragment);
+}
+
+function addPresetExercise(name) {
+  if (!state.activeSession) return;
+  addExerciseItem({ name, sets: [{ weight: "", reps: "" }] });
+  syncActiveExercises();
 }
 
 function handleBodyweightInput(event) {
@@ -288,11 +298,7 @@ function renderHistoryDetail() {
   }
 
   elements.historyDetail.innerHTML = `
-    <div class="detail-row"><span>日付</span><strong>${formatDateLabel(session.date)}</strong></div>
-    <div class="detail-row"><span>開始</span><strong>${formatTime(session.startAt)}</strong></div>
-    <div class="detail-row"><span>終了</span><strong>${formatTime(session.endAt)}</strong></div>
-    <div class="detail-row"><span>時間</span><strong>${formatMinutes(session.durationMinutes)}</strong></div>
-    <div class="detail-row"><span>体重</span><strong>${formatBodyweight(session.bodyweight)}</strong></div>
+    <div class="detail-row compact-row"><span>${formatDateLabel(session.date)} / ${formatTime(session.startAt)} - ${formatTime(session.endAt)} / ${formatMinutes(session.durationMinutes)} / ${formatBodyweight(session.bodyweight)}</span></div>
     ${renderExerciseSummary(session.exercises ?? [])}
     <button class="danger-button" id="delete-session-button" type="button">この記録を削除</button>
   `;
@@ -313,18 +319,28 @@ function renderExerciseSummary(exercises) {
   }
 
   return `
-    <div class="detail-note-block">
-      <span>種目</span>
+      <div class="detail-note-block">
+        <span>種目</span>
       ${exercises
         .map((exercise) => {
-          const setText = (exercise.sets ?? [])
-            .map((set, index) => `${index + 1}セット目 ${set.weight}kg x ${set.reps}回`)
-            .join("<br>");
-          return `<p><strong>${escapeHtml(exercise.name)}</strong><br>${setText || "セット未入力"}</p>`;
+          return `<p><strong>${escapeHtml(exercise.name)}</strong><br>${escapeHtml(summarizeExercise(exercise))}</p>`;
         })
         .join("")}
     </div>
   `;
+}
+
+function summarizeExercise(exercise) {
+  const sets = exercise.sets ?? [];
+  if (!sets.length) return "セット未入力";
+
+  const first = sets[0];
+  const samePattern = sets.every((set) => Number(set.weight) === Number(first.weight) && Number(set.reps) === Number(first.reps));
+  if (samePattern) {
+    return `${first.weight}kg x ${first.reps}回 x ${sets.length}セット`;
+  }
+
+  return sets.map((set) => `${set.weight}kg x ${set.reps}回`).join(" / ");
 }
 
 function deleteSession(id) {

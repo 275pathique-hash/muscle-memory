@@ -213,6 +213,13 @@ input {
   margin-top: 12px;
 }
 
+.preset-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .exercise-item {
   padding: 14px;
   border-radius: 18px;
@@ -227,6 +234,7 @@ input {
 }
 
 .mini-button,
+.preset-button,
 .remove-exercise,
 .remove-set {
   border: 0;
@@ -240,6 +248,10 @@ input {
 .remove-exercise,
 .remove-set {
   white-space: nowrap;
+}
+
+.compact-row {
+  font-size: 0.95rem;
 }
 
 .hidden {

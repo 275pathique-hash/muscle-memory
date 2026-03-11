@@ -10,6 +10,7 @@ const elements = {
   analysisEmpty: document.querySelector("#analysis-empty"),
   analysisSummary: document.querySelector("#analysis-summary"),
   chart: document.querySelector("#growth-chart"),
+  countChart: document.querySelector("#count-chart"),
 };
 
 bootstrap();
@@ -51,6 +52,7 @@ function render() {
   renderSelect();
   renderSummary();
   renderChart();
+  renderCountChart();
 }
 
 function renderSelect() {
@@ -174,6 +176,86 @@ function buildPoints(exerciseName) {
       return { date: session.date, maxWeight, bodyweight: session.bodyweight };
     })
     .filter(Boolean);
+}
+
+function renderCountChart() {
+  const ctx = elements.countChart.getContext("2d");
+  const points = buildCountPoints(state.selectedExercise);
+  drawLineChart(ctx, elements.countChart.width, elements.countChart.height, points, "count");
+}
+
+function buildCountPoints(exerciseName) {
+  if (!exerciseName) return [];
+
+  let count = 0;
+  return state.sessions
+    .slice()
+    .reverse()
+    .map((session) => {
+      const exists = (session.exercises ?? []).some((entry) => entry.name === exerciseName);
+      if (!exists) return null;
+      count += 1;
+      return { date: session.date, value: count };
+    })
+    .filter(Boolean);
+}
+
+function drawLineChart(ctx, width, height, points, mode) {
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fffaf1";
+  ctx.fillRect(0, 0, width, height);
+
+  if (!points.length) {
+    ctx.fillStyle = "#6e625b";
+    ctx.font = "24px sans-serif";
+    ctx.fillText("データがありません", 40, 60);
+    return;
+  }
+
+  const padding = 48;
+  const values = points.map((point) => (mode === "count" ? point.value : point.maxWeight));
+  const maxValue = Math.max(...values, 1);
+  const stepX = points.length === 1 ? 0 : (width - padding * 2) / (points.length - 1);
+
+  ctx.strokeStyle = "rgba(61, 52, 45, 0.14)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i += 1) {
+    const y = padding + ((height - padding * 2) / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(width - padding, y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "#c55b2d";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    const value = mode === "count" ? point.value : point.maxWeight;
+    const x = padding + stepX * index;
+    const y = height - padding - (value / maxValue) * (height - padding * 2);
+    if (index === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#c55b2d";
+  points.forEach((point, index) => {
+    const value = mode === "count" ? point.value : point.maxWeight;
+    const x = padding + stepX * index;
+    const y = height - padding - (value / maxValue) * (height - padding * 2);
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(String(value), x - 8, y - 12);
+  });
+
+  ctx.fillStyle = "#6e625b";
+  ctx.font = "12px sans-serif";
+  points.forEach((point, index) => {
+    const x = padding + stepX * index;
+    ctx.fillText(formatShortDate(point.date), x - 18, height - 18);
+  });
 }
 
 function formatShortDate(dateKey) {
