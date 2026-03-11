@@ -25,7 +25,6 @@ body {
 }
 
 button,
-textarea,
 select,
 input {
   font: inherit;
@@ -78,9 +77,22 @@ h2 {
   margin-top: 10px;
 }
 
+.hero-link {
+  display: inline-flex;
+  margin-top: 14px;
+  color: var(--accent-dark);
+  text-decoration: none;
+}
+
 .layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.analysis-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
   gap: 18px;
 }
 
@@ -93,7 +105,8 @@ h2 {
 }
 
 .primary-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   width: 100%;
   min-height: 56px;
   border: 0;
@@ -113,9 +126,14 @@ h2 {
   background: rgba(197, 91, 45, 0.12);
 }
 
+.danger-button {
+  margin-top: 12px;
+  color: #8b1e1e;
+  background: rgba(139, 30, 30, 0.12);
+}
+
 .secondary-button:disabled,
-.primary-button:disabled,
-textarea:disabled {
+.primary-button:disabled {
   opacity: 0.45;
   cursor: default;
 }
@@ -157,7 +175,6 @@ textarea:disabled {
   margin-top: 18px;
 }
 
-textarea,
 select,
 input {
   width: 100%;
@@ -166,10 +183,6 @@ input {
   background: rgba(255, 255, 255, 0.72);
   padding: 14px 16px;
   color: var(--text);
-}
-
-textarea {
-  resize: vertical;
 }
 
 .detail-note-block p {
@@ -233,12 +246,22 @@ textarea {
   display: none;
 }
 
+.chart-canvas {
+  width: 100%;
+  height: auto;
+  margin-top: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 18px;
   }
 
-  .layout {
+  .layout,
+  .analysis-layout {
     grid-template-columns: 1fr;
   }
 

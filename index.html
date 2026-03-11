@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=4" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
   </head>
   <body>
     <div class="app-shell">
@@ -20,6 +20,7 @@
         <p class="eyebrow">Workout Log</p>
         <h1>トレーニングを始める</h1>
         <p class="hero-copy">まずは START。終わったら Finish。過去の記録は下の選択からすぐ見返せます。</p>
+        <a class="hero-link" href="./exercise.html">種目ごとの成長を見る</a>
       </header>
 
       <main class="layout">
@@ -44,11 +45,6 @@
               <strong id="duration-time">--</strong>
             </div>
           </div>
-
-          <label class="field">
-            <span>メモ</span>
-            <textarea id="session-note" rows="3" placeholder="今日の部位や気づき"></textarea>
-          </label>
 
           <div id="exercise-panel" class="exercise-panel hidden">
             <div class="exercise-header">
@@ -91,6 +87,6 @@
       </div>
     </template>
 
-    <script src="./app.js?v=4"></script>
+    <script src="./app.js?v=5"></script>
   </body>
 </html>

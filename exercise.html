@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exercise Growth</title>
+    <meta name="theme-color" content="#c55b2d" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Exercise Growth</p>
+        <h1>種目ごとの成長率</h1>
+        <p class="hero-copy">各種目の最高重量と推移をざっくり確認できます。</p>
+        <a class="hero-link" href="./index.html">ホームへ戻る</a>
+      </header>
+
+      <main class="analysis-layout">
+        <section class="panel">
+          <p class="section-label">Exercise</p>
+          <h2>種目を選ぶ</h2>
+          <label class="field">
+            <span>種目</span>
+            <select id="exercise-select"></select>
+          </label>
+          <div id="analysis-empty" class="empty-state">記録された種目がまだありません。</div>
+          <div id="analysis-summary" class="history-detail hidden"></div>
+        </section>
+
+        <section class="panel">
+          <p class="section-label">Graph</p>
+          <h2>最高重量の推移</h2>
+          <canvas id="growth-chart" width="800" height="360" class="chart-canvas"></canvas>
+        </section>
+      </main>
+    </div>
+
+    <script src="./exercise.js?v=5"></script>
+  </body>
+</html>

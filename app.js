@@ -16,7 +16,6 @@ const elements = {
   startTime: document.querySelector("#start-time"),
   finishTime: document.querySelector("#finish-time"),
   durationTime: document.querySelector("#duration-time"),
-  sessionNote: document.querySelector("#session-note"),
   exercisePanel: document.querySelector("#exercise-panel"),
   addExercise: document.querySelector("#add-exercise"),
   exerciseList: document.querySelector("#exercise-list"),
@@ -39,13 +38,8 @@ function bootstrap() {
 
   elements.startButton.addEventListener("click", startSession);
   elements.finishButton.addEventListener("click", finishSession);
-  elements.sessionNote.addEventListener("input", handleNoteInput);
   elements.addExercise.addEventListener("click", () => addExerciseItem());
   elements.historySelect.addEventListener("change", handleHistoryChange);
-
-  if (state.activeSession) {
-    elements.sessionNote.value = state.activeSession.note ?? "";
-  }
 
   state.selectedId = state.sessions[0]?.id ?? null;
   render();
@@ -93,11 +87,9 @@ function startSession() {
     id: crypto.randomUUID(),
     date: formatDateKey(now),
     startAt: now.toISOString(),
-    note: "",
     exercises: [],
   };
 
-  elements.sessionNote.value = "";
   elements.exerciseList.innerHTML = "";
   addExerciseItem();
   saveActiveSession();
@@ -117,23 +109,15 @@ function finishSession() {
     startAt: state.activeSession.startAt,
     endAt: now.toISOString(),
     durationMinutes,
-    note: state.activeSession.note?.trim() ?? "",
     exercises: serializeExercises(),
   };
 
   state.sessions.unshift(session);
   state.selectedId = session.id;
   state.activeSession = null;
-  elements.sessionNote.value = "";
   saveSessions();
   saveActiveSession();
   render();
-}
-
-function handleNoteInput(event) {
-  if (!state.activeSession) return;
-  state.activeSession.note = event.target.value;
-  saveActiveSession();
 }
 
 function addExerciseItem(exercise = null) {
@@ -225,7 +209,6 @@ function renderSessionCard() {
   const active = state.activeSession;
   elements.startButton.disabled = Boolean(active);
   elements.finishButton.disabled = !active;
-  elements.sessionNote.disabled = !active;
   elements.exercisePanel.classList.toggle("hidden", !active);
 
   if (!active) {
@@ -295,11 +278,12 @@ function renderHistoryDetail() {
     <div class="detail-row"><span>終了</span><strong>${formatTime(session.endAt)}</strong></div>
     <div class="detail-row"><span>時間</span><strong>${formatMinutes(session.durationMinutes)}</strong></div>
     ${renderExerciseSummary(session.exercises ?? [])}
-    <div class="detail-note-block">
-      <span>メモ</span>
-      <p>${escapeHtml(session.note || "メモなし")}</p>
-    </div>
+    <button class="danger-button" id="delete-session-button" type="button">この記録を削除</button>
   `;
+
+  elements.historyDetail
+    .querySelector("#delete-session-button")
+    .addEventListener("click", () => deleteSession(session.id));
 }
 
 function renderExerciseSummary(exercises) {
@@ -325,6 +309,18 @@ function renderExerciseSummary(exercises) {
         .join("")}
     </div>
   `;
+}
+
+function deleteSession(id) {
+  const confirmed = window.confirm("この記録を削除しますか？");
+  if (!confirmed) return;
+
+  state.sessions = state.sessions.filter((session) => session.id !== id);
+  if (state.selectedId === id) {
+    state.selectedId = state.sessions[0]?.id ?? null;
+  }
+  saveSessions();
+  render();
 }
 
 function updateLiveDuration() {
