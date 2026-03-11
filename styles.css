@@ -1,0 +1,378 @@
+:root {
+  --bg: #f3efe7;
+  --panel: rgba(255, 252, 246, 0.88);
+  --panel-strong: #fffaf1;
+  --line: rgba(61, 52, 45, 0.12);
+  --text: #241c17;
+  --muted: #6e625b;
+  --accent: #c55b2d;
+  --accent-dark: #8a3614;
+  --accent-soft: #f5d5c7;
+  --shadow: 0 20px 50px rgba(70, 48, 31, 0.12);
+  --radius: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Hiragino Sans", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(197, 91, 45, 0.18), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(77, 113, 92, 0.18), transparent 28%),
+    linear-gradient(180deg, #f7f1e8 0%, var(--bg) 100%);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+.section-label {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.95;
+}
+
+h2 {
+  font-size: 1.4rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+.hero-copy {
+  max-width: 620px;
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 180px));
+  gap: 12px;
+}
+
+.stat-card,
+.panel {
+  backdrop-filter: blur(12px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.stat-card {
+  padding: 16px 18px;
+  border-radius: 20px;
+}
+
+.stat-card span {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 2rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr) minmax(300px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.panel-header,
+.exercise-toolbar,
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.field span {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 14px 16px;
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.exercise-toolbar {
+  margin: 22px 0 14px;
+}
+
+.exercise-list {
+  display: grid;
+  gap: 16px;
+}
+
+.exercise-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+}
+
+.grow {
+  flex: 1;
+}
+
+.previous-record {
+  margin: 6px 0 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 0.92rem;
+}
+
+.set-table {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.set-table-header,
+.set-row {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) minmax(0, 1fr) 52px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.set-table-header {
+  background: rgba(36, 28, 23, 0.05);
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.set-row + .set-row {
+  border-top: 1px solid var(--line);
+}
+
+.set-row input {
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.icon-button {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.ghost-button:hover,
+.icon-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px 18px;
+  color: white;
+  background: linear-gradient(135deg, var(--accent) 0%, #d77e29 100%);
+}
+
+.secondary-button,
+.ghost-button {
+  padding: 10px 14px;
+}
+
+.secondary-button {
+  background: rgba(197, 91, 45, 0.12);
+  color: var(--accent-dark);
+}
+
+.ghost-button {
+  background: rgba(36, 28, 23, 0.06);
+  color: var(--text);
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  background: rgba(36, 28, 23, 0.08);
+  color: var(--text);
+}
+
+.history-list,
+.detail-view {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.history-item {
+  width: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  cursor: pointer;
+  text-align: left;
+}
+
+.history-item.active {
+  outline: 2px solid rgba(197, 91, 45, 0.35);
+}
+
+.history-item-date {
+  font-weight: 700;
+}
+
+.history-item-summary,
+.detail-note,
+.detail-subtext,
+.empty-state {
+  color: var(--muted);
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.detail-exercise {
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+}
+
+.detail-sets {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-pill {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(36, 28, 23, 0.06);
+  font-size: 0.9rem;
+}
+
+.empty-state {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.44);
+  margin-top: 14px;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 1120px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: start;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    padding: 18px;
+  }
+
+  .hero-stats {
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  .panel-header,
+  .exercise-toolbar,
+  .exercise-header,
+  .detail-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .set-table-header,
+  .set-row {
+    grid-template-columns: 54px 1fr 1fr 44px;
+    padding: 10px;
+  }
+}

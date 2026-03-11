@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workout Log</title>
+    <meta name="theme-color" content="#c55b2d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Workout Log" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Workout Log</p>
+          <h1>筋トレメニュー記録</h1>
+          <p class="hero-copy">
+            その日のメニューを残して、前回の重量と回数を見ながら次回を組めます。
+          </p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-card">
+            <span>総ワークアウト数</span>
+            <strong id="total-workouts">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>登録種目数</span>
+            <strong id="total-exercises">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-label">New Entry</p>
+              <h2>今日の記録</h2>
+            </div>
+            <button id="reset-form" class="ghost-button" type="button">リセット</button>
+          </div>
+
+          <form id="workout-form">
+            <label class="field">
+              <span>日付</span>
+              <input id="workout-date" name="date" type="date" required />
+            </label>
+
+            <label class="field">
+              <span>メモ</span>
+              <textarea
+                id="workout-note"
+                name="note"
+                rows="3"
+                placeholder="体調、インターバル、気づいたこと"
+              ></textarea>
+            </label>
+
+            <div class="exercise-toolbar">
+              <div>
+                <p class="section-label">Exercises</p>
+                <h3>種目とセット</h3>
+              </div>
+              <button id="add-exercise" class="secondary-button" type="button">種目を追加</button>
+            </div>
+
+            <div id="exercise-list" class="exercise-list"></div>
+
+            <button class="primary-button" type="submit">記録を保存</button>
+          </form>
+        </section>
+
+        <section class="panel history-panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-label">History</p>
+              <h2>過去の記録</h2>
+            </div>
+          </div>
+
+          <div id="empty-history" class="empty-state">
+            まだ記録がありません。最初のワークアウトを追加してください。
+          </div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+
+        <section class="panel detail-panel">
+          <div class="panel-header">
+            <div>
+              <p class="section-label">Detail</p>
+              <h2>選択中の記録</h2>
+            </div>
+          </div>
+
+          <div id="detail-empty" class="empty-state">
+            左の履歴からワークアウトを選ぶと詳細が表示されます。
+          </div>
+          <div id="detail-view" class="detail-view hidden"></div>
+        </section>
+      </main>
+    </div>
+
+    <template id="exercise-template">
+      <article class="exercise-card">
+        <div class="exercise-header">
+          <label class="field grow">
+            <span>種目名</span>
+            <input class="exercise-name" type="text" placeholder="例: ベンチプレス" required />
+          </label>
+          <button class="ghost-button remove-exercise" type="button">削除</button>
+        </div>
+
+        <div class="previous-record hidden"></div>
+
+        <div class="set-table">
+          <div class="set-table-header">
+            <span>セット</span>
+            <span>重量(kg)</span>
+            <span>回数</span>
+            <span></span>
+          </div>
+          <div class="set-rows"></div>
+        </div>
+
+        <button class="secondary-button add-set" type="button">セットを追加</button>
+      </article>
+    </template>
+
+    <template id="set-row-template">
+      <div class="set-row">
+        <span class="set-index"></span>
+        <input class="set-weight" type="number" min="0" step="0.5" placeholder="60" required />
+        <input class="set-reps" type="number" min="1" step="1" placeholder="8" required />
+        <button class="icon-button remove-set" type="button" aria-label="セットを削除">×</button>
+      </div>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
