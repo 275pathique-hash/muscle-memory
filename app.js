@@ -17,9 +17,14 @@ const elements = {
   finishTime: document.querySelector("#finish-time"),
   durationTime: document.querySelector("#duration-time"),
   sessionNote: document.querySelector("#session-note"),
+  exercisePanel: document.querySelector("#exercise-panel"),
+  addExercise: document.querySelector("#add-exercise"),
+  exerciseList: document.querySelector("#exercise-list"),
   historySelect: document.querySelector("#history-select"),
   historyEmpty: document.querySelector("#history-empty"),
   historyDetail: document.querySelector("#history-detail"),
+  exerciseTemplate: document.querySelector("#exercise-template"),
+  setTemplate: document.querySelector("#set-template"),
 };
 
 bootstrap();
@@ -35,6 +40,7 @@ function bootstrap() {
   elements.startButton.addEventListener("click", startSession);
   elements.finishButton.addEventListener("click", finishSession);
   elements.sessionNote.addEventListener("input", handleNoteInput);
+  elements.addExercise.addEventListener("click", () => addExerciseItem());
   elements.historySelect.addEventListener("change", handleHistoryChange);
 
   if (state.activeSession) {
@@ -88,9 +94,12 @@ function startSession() {
     date: formatDateKey(now),
     startAt: now.toISOString(),
     note: "",
+    exercises: [],
   };
 
   elements.sessionNote.value = "";
+  elements.exerciseList.innerHTML = "";
+  addExerciseItem();
   saveActiveSession();
   render();
 }
@@ -109,6 +118,7 @@ function finishSession() {
     endAt: now.toISOString(),
     durationMinutes,
     note: state.activeSession.note?.trim() ?? "",
+    exercises: serializeExercises(),
   };
 
   state.sessions.unshift(session);
@@ -123,6 +133,80 @@ function finishSession() {
 function handleNoteInput(event) {
   if (!state.activeSession) return;
   state.activeSession.note = event.target.value;
+  saveActiveSession();
+}
+
+function addExerciseItem(exercise = null) {
+  const fragment = elements.exerciseTemplate.content.cloneNode(true);
+  const item = fragment.querySelector(".exercise-item");
+  const nameInput = fragment.querySelector(".exercise-name");
+  const addSetButton = fragment.querySelector(".add-set");
+  const removeExerciseButton = fragment.querySelector(".remove-exercise");
+  const setList = fragment.querySelector(".set-list");
+
+  nameInput.value = exercise?.name ?? "";
+  nameInput.addEventListener("input", syncActiveExercises);
+
+  addSetButton.addEventListener("click", () => {
+    addSetRow(setList);
+    syncActiveExercises();
+  });
+
+  removeExerciseButton.addEventListener("click", () => {
+    item.remove();
+    syncActiveExercises();
+  });
+
+  const initialSets = exercise?.sets?.length ? exercise.sets : [{ weight: "", reps: "" }];
+  initialSets.forEach((set) => addSetRow(setList, set));
+  elements.exerciseList.appendChild(fragment);
+}
+
+function addSetRow(container, set = null) {
+  const fragment = elements.setTemplate.content.cloneNode(true);
+  const row = fragment.querySelector(".set-row");
+  const weightInput = fragment.querySelector(".set-weight");
+  const repsInput = fragment.querySelector(".set-reps");
+  const removeSetButton = fragment.querySelector(".remove-set");
+
+  weightInput.value = set?.weight ?? "";
+  repsInput.value = set?.reps ?? "";
+  weightInput.addEventListener("input", syncActiveExercises);
+  repsInput.addEventListener("input", syncActiveExercises);
+
+  removeSetButton.addEventListener("click", () => {
+    row.remove();
+    if (container.children.length === 0) {
+      addSetRow(container);
+    }
+    syncActiveExercises();
+  });
+
+  container.appendChild(fragment);
+}
+
+function serializeExercises() {
+  return [...elements.exerciseList.querySelectorAll(".exercise-item")]
+    .map((item) => {
+      const name = item.querySelector(".exercise-name").value.trim();
+      const sets = [...item.querySelectorAll(".set-row")]
+        .map((row) => {
+          const weight = row.querySelector(".set-weight").value;
+          const reps = row.querySelector(".set-reps").value;
+          if (!weight || !reps) return null;
+          return { weight: Number(weight), reps: Number(reps) };
+        })
+        .filter(Boolean);
+
+      if (!name && sets.length === 0) return null;
+      return { name: name || "種目名なし", sets };
+    })
+    .filter(Boolean);
+}
+
+function syncActiveExercises() {
+  if (!state.activeSession) return;
+  state.activeSession.exercises = serializeExercises();
   saveActiveSession();
 }
 
@@ -142,17 +226,32 @@ function renderSessionCard() {
   elements.startButton.disabled = Boolean(active);
   elements.finishButton.disabled = !active;
   elements.sessionNote.disabled = !active;
+  elements.exercisePanel.classList.toggle("hidden", !active);
 
   if (!active) {
     elements.startTime.textContent = "--:--";
     elements.finishTime.textContent = "--:--";
     elements.durationTime.textContent = "--";
+    elements.exerciseList.innerHTML = "";
     return;
   }
 
+  renderExerciseEditor(active.exercises ?? []);
   elements.startTime.textContent = formatTime(active.startAt);
   elements.finishTime.textContent = "--:--";
   elements.durationTime.textContent = formatElapsed(active.startAt);
+}
+
+function renderExerciseEditor(exercises) {
+  if (elements.exerciseList.children.length > 0) return;
+  elements.exerciseList.innerHTML = "";
+
+  if (!exercises.length) {
+    addExerciseItem();
+    return;
+  }
+
+  exercises.forEach((exercise) => addExerciseItem(exercise));
 }
 
 function renderHistorySelect() {
@@ -195,9 +294,35 @@ function renderHistoryDetail() {
     <div class="detail-row"><span>開始</span><strong>${formatTime(session.startAt)}</strong></div>
     <div class="detail-row"><span>終了</span><strong>${formatTime(session.endAt)}</strong></div>
     <div class="detail-row"><span>時間</span><strong>${formatMinutes(session.durationMinutes)}</strong></div>
+    ${renderExerciseSummary(session.exercises ?? [])}
     <div class="detail-note-block">
       <span>メモ</span>
       <p>${escapeHtml(session.note || "メモなし")}</p>
+    </div>
+  `;
+}
+
+function renderExerciseSummary(exercises) {
+  if (!exercises.length) {
+    return `
+      <div class="detail-note-block">
+        <span>種目</span>
+        <p>記録なし</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="detail-note-block">
+      <span>種目</span>
+      ${exercises
+        .map((exercise) => {
+          const setText = (exercise.sets ?? [])
+            .map((set, index) => `${index + 1}セット目 ${set.weight}kg x ${set.reps}回`)
+            .join("<br>");
+          return `<p><strong>${escapeHtml(exercise.name)}</strong><br>${setText || "セット未入力"}</p>`;
+        })
+        .join("")}
     </div>
   `;
 }
