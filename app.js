@@ -26,7 +26,6 @@ const elements = {
   historyEmpty: document.querySelector("#history-empty"),
   historyDetail: document.querySelector("#history-detail"),
   exerciseTemplate: document.querySelector("#exercise-template"),
-  setTemplate: document.querySelector("#set-template"),
 };
 
 bootstrap();
@@ -134,25 +133,26 @@ function addExerciseItem(exercise = null) {
   const fragment = elements.exerciseTemplate.content.cloneNode(true);
   const item = fragment.querySelector(".exercise-item");
   const nameInput = fragment.querySelector(".exercise-name");
-  const addSetButton = fragment.querySelector(".add-set");
   const removeExerciseButton = fragment.querySelector(".remove-exercise");
-  const setList = fragment.querySelector(".set-list");
+  const weightInput = fragment.querySelector(".set-weight");
+  const repsInput = fragment.querySelector(".set-reps");
+  const countInput = fragment.querySelector(".set-count");
 
   nameInput.value = exercise?.name ?? "";
   nameInput.addEventListener("input", syncActiveExercises);
-
-  addSetButton.addEventListener("click", () => {
-    addSetRow(setList);
-    syncActiveExercises();
-  });
+  weightInput.addEventListener("input", syncActiveExercises);
+  repsInput.addEventListener("input", syncActiveExercises);
+  countInput.addEventListener("input", syncActiveExercises);
 
   removeExerciseButton.addEventListener("click", () => {
     item.remove();
     syncActiveExercises();
   });
 
-  const initialSets = exercise?.sets?.length ? exercise.sets : [{ weight: "", reps: "" }];
-  initialSets.forEach((set) => addSetRow(setList, set));
+  const summary = normalizeExerciseForEditor(exercise);
+  weightInput.value = summary.weight;
+  repsInput.value = summary.reps;
+  countInput.value = summary.count;
   elements.exerciseList.appendChild(fragment);
 }
 
@@ -168,46 +168,40 @@ function handleBodyweightInput(event) {
   saveActiveSession();
 }
 
-function addSetRow(container, set = null) {
-  const fragment = elements.setTemplate.content.cloneNode(true);
-  const row = fragment.querySelector(".set-row");
-  const weightInput = fragment.querySelector(".set-weight");
-  const repsInput = fragment.querySelector(".set-reps");
-  const removeSetButton = fragment.querySelector(".remove-set");
-
-  weightInput.value = set?.weight ?? "";
-  repsInput.value = set?.reps ?? "";
-  weightInput.addEventListener("input", syncActiveExercises);
-  repsInput.addEventListener("input", syncActiveExercises);
-
-  removeSetButton.addEventListener("click", () => {
-    row.remove();
-    if (container.children.length === 0) {
-      addSetRow(container);
-    }
-    syncActiveExercises();
-  });
-
-  container.appendChild(fragment);
-}
-
 function serializeExercises() {
   return [...elements.exerciseList.querySelectorAll(".exercise-item")]
     .map((item) => {
       const name = item.querySelector(".exercise-name").value.trim();
-      const sets = [...item.querySelectorAll(".set-row")]
-        .map((row) => {
-          const weight = row.querySelector(".set-weight").value;
-          const reps = row.querySelector(".set-reps").value;
-          if (!weight || !reps) return null;
-          return { weight: Number(weight), reps: Number(reps) };
-        })
-        .filter(Boolean);
+      const weight = item.querySelector(".set-weight").value;
+      const reps = item.querySelector(".set-reps").value;
+      const count = item.querySelector(".set-count").value;
 
-      if (!name && sets.length === 0) return null;
+      if (!name && !weight && !reps && !count) return null;
+      const sets = buildSetsFromSimpleInputs(weight, reps, count);
       return { name: name || "種目名なし", sets };
     })
     .filter(Boolean);
+}
+
+function buildSetsFromSimpleInputs(weight, reps, count) {
+  const safeCount = Math.max(1, Number(count) || 1);
+  if (!weight || !reps) return [];
+
+  return Array.from({ length: safeCount }, () => ({
+    weight: Number(weight),
+    reps: Number(reps),
+  }));
+}
+
+function normalizeExerciseForEditor(exercise) {
+  const sets = exercise?.sets ?? [];
+  if (!sets.length) return { weight: "", reps: "", count: "" };
+
+  return {
+    weight: sets[0].weight ?? "",
+    reps: sets[0].reps ?? "",
+    count: sets.length,
+  };
 }
 
 function syncActiveExercises() {

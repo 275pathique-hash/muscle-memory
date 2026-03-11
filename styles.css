@@ -227,12 +227,6 @@ input {
   border: 1px solid var(--line);
 }
 
-.set-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-
 .mini-button,
 .preset-button,
 .remove-exercise,
@@ -252,6 +246,14 @@ input {
 
 .compact-row {
   font-size: 0.95rem;
+}
+
+.simple-set-row {
+  margin-top: 10px;
+}
+
+.simple-set-row input {
+  flex: 1;
 }
 
 .hidden {
