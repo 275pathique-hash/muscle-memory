@@ -19,127 +19,112 @@
       <header class="hero">
         <div>
           <p class="eyebrow">Workout Log</p>
-          <h1>筋トレメニュー記録</h1>
+          <h1>スタートして、終わったら記録する</h1>
           <p class="hero-copy">
-            その日のメニューを残して、前回の重量と回数を見ながら次回を組めます。
+            Startで開始時刻を打刻し、Finishで終了時刻を残します。月カレンダーにスタンプがたまり、続けた日が見える形です。
           </p>
         </div>
         <div class="hero-stats">
           <div class="stat-card">
-            <span>総ワークアウト数</span>
-            <strong id="total-workouts">0</strong>
+            <span>総セッション数</span>
+            <strong id="total-sessions">0</strong>
           </div>
           <div class="stat-card">
-            <span>登録種目数</span>
-            <strong id="total-exercises">0</strong>
+            <span>今月の達成日数</span>
+            <strong id="month-stamps">0</strong>
           </div>
         </div>
       </header>
 
       <main class="layout">
-        <section class="panel form-panel">
+        <section class="panel control-panel">
           <div class="panel-header">
             <div>
-              <p class="section-label">New Entry</p>
-              <h2>今日の記録</h2>
+              <p class="section-label">Session</p>
+              <h2>今日の打刻</h2>
             </div>
-            <button id="reset-form" class="ghost-button" type="button">リセット</button>
+            <span id="session-status" class="status-chip">未開始</span>
           </div>
 
-          <form id="workout-form">
-            <label class="field">
-              <span>日付</span>
-              <input id="workout-date" name="date" type="date" required />
-            </label>
+          <div class="clock-card">
+            <p class="section-label">Now</p>
+            <p id="live-date" class="live-date"></p>
+            <p id="live-time" class="live-time"></p>
+          </div>
 
-            <label class="field">
-              <span>メモ</span>
-              <textarea
-                id="workout-note"
-                name="note"
-                rows="3"
-                placeholder="体調、インターバル、気づいたこと"
-              ></textarea>
-            </label>
-
-            <div class="exercise-toolbar">
-              <div>
-                <p class="section-label">Exercises</p>
-                <h3>種目とセット</h3>
-              </div>
-              <button id="add-exercise" class="secondary-button" type="button">種目を追加</button>
+          <div class="session-grid">
+            <div class="session-box">
+              <span>開始</span>
+              <strong id="start-time">--:--</strong>
             </div>
+            <div class="session-box">
+              <span>終了</span>
+              <strong id="finish-time">--:--</strong>
+            </div>
+            <div class="session-box">
+              <span>経過時間</span>
+              <strong id="duration-time">--</strong>
+            </div>
+          </div>
 
-            <div id="exercise-list" class="exercise-list"></div>
+          <div class="button-row">
+            <button id="start-button" class="primary-button" type="button">Start</button>
+            <button id="finish-button" class="secondary-button" type="button" disabled>Finish</button>
+          </div>
 
-            <button class="primary-button" type="submit">記録を保存</button>
-          </form>
+          <label class="field">
+            <span>メモ</span>
+            <textarea
+              id="session-note"
+              rows="3"
+              placeholder="今日の気分、部位、気づいたこと"
+            ></textarea>
+          </label>
+
+          <p class="hint-text">
+            Startを押した時点で日付と開始時刻を保存します。Finishを押すと終了時刻と所要時間が確定します。
+          </p>
         </section>
 
-        <section class="panel history-panel">
+        <section class="panel calendar-panel">
           <div class="panel-header">
             <div>
-              <p class="section-label">History</p>
-              <h2>過去の記録</h2>
+              <p class="section-label">Calendar</p>
+              <h2 id="calendar-title">今月のスタンプ</h2>
+            </div>
+            <div class="month-nav">
+              <button id="prev-month" class="ghost-button" type="button">前月</button>
+              <button id="next-month" class="ghost-button" type="button">次月</button>
             </div>
           </div>
 
-          <div id="empty-history" class="empty-state">
-            まだ記録がありません。最初のワークアウトを追加してください。
+          <div class="weekday-row">
+            <span>日</span>
+            <span>月</span>
+            <span>火</span>
+            <span>水</span>
+            <span>木</span>
+            <span>金</span>
+            <span>土</span>
           </div>
-          <div id="history-list" class="history-list"></div>
+          <div id="calendar-grid" class="calendar-grid"></div>
         </section>
 
         <section class="panel detail-panel">
           <div class="panel-header">
             <div>
               <p class="section-label">Detail</p>
-              <h2>選択中の記録</h2>
+              <h2>選択した日の記録</h2>
             </div>
           </div>
 
           <div id="detail-empty" class="empty-state">
-            左の履歴からワークアウトを選ぶと詳細が表示されます。
+            カレンダーの日付を押すと、その日のセッションが表示されます。
           </div>
           <div id="detail-view" class="detail-view hidden"></div>
         </section>
       </main>
     </div>
-
-    <template id="exercise-template">
-      <article class="exercise-card">
-        <div class="exercise-header">
-          <label class="field grow">
-            <span>種目名</span>
-            <input class="exercise-name" type="text" placeholder="例: ベンチプレス" required />
-          </label>
-          <button class="ghost-button remove-exercise" type="button">削除</button>
-        </div>
-
-        <div class="previous-record hidden"></div>
-
-        <div class="set-table">
-          <div class="set-table-header">
-            <span>セット</span>
-            <span>重量(kg)</span>
-            <span>回数</span>
-            <span></span>
-          </div>
-          <div class="set-rows"></div>
-        </div>
-
-        <button class="secondary-button add-set" type="button">セットを追加</button>
-      </article>
-    </template>
-
-    <template id="set-row-template">
-      <div class="set-row">
-        <span class="set-index"></span>
-        <input class="set-weight" type="number" min="0" step="0.5" placeholder="60" required />
-        <input class="set-reps" type="number" min="1" step="1" placeholder="8" required />
-        <button class="icon-button remove-set" type="button" aria-label="セットを削除">×</button>
-      </div>
-    </template>
 
     <script src="./app.js"></script>
   </body>

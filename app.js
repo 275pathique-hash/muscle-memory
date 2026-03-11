@@ -1,337 +1,422 @@
-const STORAGE_KEY = "workout-log-app-v1";
+const STORAGE_KEY = "workout-log-app-v2";
 
 const state = {
-  workouts: loadWorkouts(),
-  selectedWorkoutId: null,
+  sessions: loadSessions(),
+  activeSession: loadActiveSession(),
+  selectedDate: null,
+  calendarDate: startOfMonth(new Date()),
 };
 
 registerServiceWorker();
 
 const elements = {
-  form: document.querySelector("#workout-form"),
-  workoutDate: document.querySelector("#workout-date"),
-  workoutNote: document.querySelector("#workout-note"),
-  exerciseList: document.querySelector("#exercise-list"),
-  addExercise: document.querySelector("#add-exercise"),
-  resetForm: document.querySelector("#reset-form"),
-  historyList: document.querySelector("#history-list"),
-  emptyHistory: document.querySelector("#empty-history"),
+  totalSessions: document.querySelector("#total-sessions"),
+  monthStamps: document.querySelector("#month-stamps"),
+  sessionStatus: document.querySelector("#session-status"),
+  liveDate: document.querySelector("#live-date"),
+  liveTime: document.querySelector("#live-time"),
+  startTime: document.querySelector("#start-time"),
+  finishTime: document.querySelector("#finish-time"),
+  durationTime: document.querySelector("#duration-time"),
+  startButton: document.querySelector("#start-button"),
+  finishButton: document.querySelector("#finish-button"),
+  sessionNote: document.querySelector("#session-note"),
+  prevMonth: document.querySelector("#prev-month"),
+  nextMonth: document.querySelector("#next-month"),
+  calendarTitle: document.querySelector("#calendar-title"),
+  calendarGrid: document.querySelector("#calendar-grid"),
   detailEmpty: document.querySelector("#detail-empty"),
   detailView: document.querySelector("#detail-view"),
-  totalWorkouts: document.querySelector("#total-workouts"),
-  totalExercises: document.querySelector("#total-exercises"),
-  exerciseTemplate: document.querySelector("#exercise-template"),
-  setRowTemplate: document.querySelector("#set-row-template"),
 };
 
 bootstrap();
 
 function bootstrap() {
-  elements.workoutDate.value = getToday();
+  elements.startButton.addEventListener("click", startSession);
+  elements.finishButton.addEventListener("click", finishSession);
+  elements.prevMonth.addEventListener("click", () => shiftMonth(-1));
+  elements.nextMonth.addEventListener("click", () => shiftMonth(1));
+  elements.sessionNote.addEventListener("input", handleNoteInput);
 
-  elements.addExercise.addEventListener("click", () => addExerciseCard());
-  elements.resetForm.addEventListener("click", resetForm);
-  elements.form.addEventListener("submit", handleSubmit);
-
-  if (state.workouts.length > 0) {
-    state.selectedWorkoutId = state.workouts[0].id;
+  if (state.activeSession) {
+    elements.sessionNote.value = state.activeSession.note ?? "";
   }
 
-  addExerciseCard();
+  const todayKey = formatDateKey(new Date());
+  state.selectedDate = state.activeSession?.date ?? findLatestDate() ?? todayKey;
+  state.calendarDate = startOfMonth(new Date(`${state.selectedDate}T00:00:00`));
+
+  updateClock();
+  setInterval(updateClock, 1000);
   render();
 }
 
-function loadWorkouts() {
+function loadSessions() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+
+    const legacyRaw = localStorage.getItem("workout-log-app-v1");
+    if (!legacyRaw) return [];
+    const legacy = JSON.parse(legacyRaw);
+    if (!Array.isArray(legacy)) return [];
+
+    const migrated = legacy.map((workout) => migrateLegacyWorkout(workout)).filter(Boolean);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+    return migrated;
   } catch {
     return [];
   }
 }
 
-function saveWorkouts() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.workouts));
+function migrateLegacyWorkout(workout) {
+  if (!workout?.date) return null;
+
+  return {
+    id: workout.id ?? crypto.randomUUID(),
+    date: workout.date,
+    startAt: `${workout.date}T09:00:00`,
+    endAt: `${workout.date}T10:00:00`,
+    durationMinutes: 60,
+    note: workout.note ?? "",
+    stampCount: 1,
+  };
 }
 
-function addExerciseCard(exercise = null) {
-  const fragment = elements.exerciseTemplate.content.cloneNode(true);
-  const card = fragment.querySelector(".exercise-card");
-  const nameInput = fragment.querySelector(".exercise-name");
-  const removeButton = fragment.querySelector(".remove-exercise");
-  const addSetButton = fragment.querySelector(".add-set");
-  const previousRecord = fragment.querySelector(".previous-record");
-  const setRows = fragment.querySelector(".set-rows");
-
-  nameInput.value = exercise?.name ?? "";
-
-  removeButton.addEventListener("click", () => {
-    card.remove();
-    ensureExerciseExists();
-  });
-
-  addSetButton.addEventListener("click", () => {
-    addSetRow(setRows);
-    refreshSetIndexes(setRows);
-  });
-
-  nameInput.addEventListener("input", () => {
-    updatePreviousRecord(nameInput, previousRecord);
-  });
-
-  const initialSets = exercise?.sets?.length ? exercise.sets : [{ weight: "", reps: "" }];
-  initialSets.forEach((set) => addSetRow(setRows, set));
-  refreshSetIndexes(setRows);
-  updatePreviousRecord(nameInput, previousRecord);
-
-  elements.exerciseList.appendChild(fragment);
-}
-
-function addSetRow(container, set = null) {
-  const fragment = elements.setRowTemplate.content.cloneNode(true);
-  const row = fragment.querySelector(".set-row");
-  const weightInput = fragment.querySelector(".set-weight");
-  const repsInput = fragment.querySelector(".set-reps");
-  const removeButton = fragment.querySelector(".remove-set");
-
-  weightInput.value = set?.weight ?? "";
-  repsInput.value = set?.reps ?? "";
-
-  removeButton.addEventListener("click", () => {
-    row.remove();
-    if (container.children.length === 0) {
-      addSetRow(container);
-    }
-    refreshSetIndexes(container);
-  });
-
-  container.appendChild(fragment);
-}
-
-function refreshSetIndexes(container) {
-  [...container.querySelectorAll(".set-row")].forEach((row, index) => {
-    row.querySelector(".set-index").textContent = `${index + 1}セット目`;
-  });
-}
-
-function ensureExerciseExists() {
-  if (elements.exerciseList.children.length === 0) {
-    addExerciseCard();
+function loadActiveSession() {
+  try {
+    const raw = localStorage.getItem("workout-log-app-active-session");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
 }
 
-function handleSubmit(event) {
-  event.preventDefault();
+function saveSessions() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessions));
+}
 
-  const exercises = [...elements.exerciseList.querySelectorAll(".exercise-card")]
-    .map((card) => serializeExercise(card))
-    .filter(Boolean);
-
-  if (exercises.length === 0) {
-    alert("少なくとも1つの種目を入力してください。");
+function saveActiveSession() {
+  if (!state.activeSession) {
+    localStorage.removeItem("workout-log-app-active-session");
     return;
   }
+  localStorage.setItem("workout-log-app-active-session", JSON.stringify(state.activeSession));
+}
 
-  const workout = {
+function startSession() {
+  if (state.activeSession) return;
+
+  const now = new Date();
+  state.activeSession = {
     id: crypto.randomUUID(),
-    date: elements.workoutDate.value,
-    note: elements.workoutNote.value.trim(),
-    exercises,
-    createdAt: Date.now(),
+    date: formatDateKey(now),
+    startAt: now.toISOString(),
+    note: "",
   };
 
-  state.workouts.unshift(workout);
-  state.selectedWorkoutId = workout.id;
-  saveWorkouts();
+  elements.sessionNote.value = "";
+  state.selectedDate = state.activeSession.date;
+  state.calendarDate = startOfMonth(now);
+  saveActiveSession();
   render();
-  resetForm();
 }
 
-function serializeExercise(card) {
-  const name = card.querySelector(".exercise-name").value.trim();
-  if (!name) return null;
+function finishSession() {
+  if (!state.activeSession) return;
 
-  const sets = [...card.querySelectorAll(".set-row")]
-    .map((row) => {
-      const weight = row.querySelector(".set-weight").value;
-      const reps = row.querySelector(".set-reps").value;
-      if (!weight || !reps) return null;
+  const now = new Date();
+  const started = new Date(state.activeSession.startAt);
+  const durationMinutes = Math.max(1, Math.round((now.getTime() - started.getTime()) / 60000));
 
-      return {
-        weight: Number(weight),
-        reps: Number(reps),
-      };
-    })
-    .filter(Boolean);
+  state.sessions.unshift({
+    id: state.activeSession.id,
+    date: state.activeSession.date,
+    startAt: state.activeSession.startAt,
+    endAt: now.toISOString(),
+    durationMinutes,
+    note: state.activeSession.note?.trim() ?? "",
+    stampCount: 1,
+  });
 
-  if (sets.length === 0) return null;
-
-  return { name, sets };
+  state.selectedDate = state.activeSession.date;
+  state.activeSession = null;
+  elements.sessionNote.value = "";
+  saveSessions();
+  saveActiveSession();
+  render();
 }
 
-function resetForm() {
-  elements.form.reset();
-  elements.workoutDate.value = getToday();
-  elements.exerciseList.innerHTML = "";
-  addExerciseCard();
+function handleNoteInput(event) {
+  if (!state.activeSession) return;
+  state.activeSession.note = event.target.value;
+  saveActiveSession();
+}
+
+function shiftMonth(offset) {
+  const next = new Date(state.calendarDate);
+  next.setMonth(next.getMonth() + offset);
+  state.calendarDate = startOfMonth(next);
+  renderCalendar();
+  renderStats();
 }
 
 function render() {
   renderStats();
-  renderHistory();
+  renderSessionCard();
+  renderCalendar();
   renderDetail();
 }
 
 function renderStats() {
-  elements.totalWorkouts.textContent = String(state.workouts.length);
-  const exerciseNames = new Set(
-    state.workouts.flatMap((workout) => workout.exercises.map((exercise) => exercise.name.toLowerCase()))
+  elements.totalSessions.textContent = String(state.sessions.length);
+
+  const currentMonthKey = monthKey(state.calendarDate);
+  const stampDays = new Set(
+    state.sessions.filter((session) => monthKey(new Date(session.date)) === currentMonthKey).map((session) => session.date)
   );
-  elements.totalExercises.textContent = String(exerciseNames.size);
+  if (state.activeSession && monthKey(new Date(state.activeSession.date)) === currentMonthKey) {
+    stampDays.add(state.activeSession.date);
+  }
+  elements.monthStamps.textContent = String(stampDays.size);
 }
 
-function renderHistory() {
-  elements.historyList.innerHTML = "";
-  const hasHistory = state.workouts.length > 0;
-  elements.emptyHistory.classList.toggle("hidden", hasHistory);
+function renderSessionCard() {
+  const active = state.activeSession;
+  elements.sessionStatus.textContent = active ? "進行中" : "未開始";
+  elements.sessionStatus.classList.toggle("is-live", Boolean(active));
+  elements.startButton.disabled = Boolean(active);
+  elements.finishButton.disabled = !active;
 
-  state.workouts.forEach((workout) => {
+  if (!active) {
+    elements.startTime.textContent = "--:--";
+    elements.finishTime.textContent = "--:--";
+    elements.durationTime.textContent = "--";
+    return;
+  }
+
+  elements.startTime.textContent = formatTime(active.startAt);
+  elements.finishTime.textContent = "--:--";
+  elements.durationTime.textContent = formatElapsed(active.startAt);
+}
+
+function renderCalendar() {
+  elements.calendarTitle.textContent = formatMonthTitle(state.calendarDate);
+  elements.calendarGrid.innerHTML = "";
+
+  const firstDay = startOfMonth(state.calendarDate);
+  const firstWeekday = firstDay.getDay();
+  const totalDays = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0).getDate();
+  const stamps = buildStampMap(firstDay);
+
+  for (let i = 0; i < firstWeekday; i += 1) {
+    const blank = document.createElement("div");
+    blank.className = "calendar-day is-blank";
+    elements.calendarGrid.appendChild(blank);
+  }
+
+  for (let day = 1; day <= totalDays; day += 1) {
+    const date = new Date(firstDay.getFullYear(), firstDay.getMonth(), day);
+    const key = formatDateKey(date);
     const button = document.createElement("button");
+    const count = stamps.get(key) ?? 0;
+
     button.type = "button";
-    button.className = "history-item";
-    const date = document.createElement("div");
-    const summary = document.createElement("p");
+    button.className = "calendar-day";
+    if (count > 0) button.classList.add("has-stamp");
+    if (key === state.selectedDate) button.classList.add("is-selected");
+    if (key === formatDateKey(new Date())) button.classList.add("is-today");
 
-    date.className = "history-item-date";
-    date.textContent = formatDate(workout.date);
+    const dayNumber = document.createElement("span");
+    dayNumber.className = "day-number";
+    dayNumber.textContent = String(day);
 
-    summary.className = "history-item-summary";
-    summary.textContent = summarizeWorkout(workout);
+    button.appendChild(dayNumber);
 
-    if (workout.id === state.selectedWorkoutId) {
-      button.classList.add("active");
+    if (count > 0) {
+      const stamp = document.createElement("span");
+      stamp.className = "stamp-badge";
+      stamp.textContent = count > 1 ? `🏋️ ${count}` : "🏋️";
+      button.appendChild(stamp);
     }
 
-    button.append(date, summary);
-
     button.addEventListener("click", () => {
-      state.selectedWorkoutId = workout.id;
-      render();
+      state.selectedDate = key;
+      renderCalendar();
+      renderDetail();
     });
 
-    elements.historyList.appendChild(button);
-  });
+    elements.calendarGrid.appendChild(button);
+  }
 }
 
 function renderDetail() {
-  const selectedWorkout = state.workouts.find((workout) => workout.id === state.selectedWorkoutId);
-  const hasSelection = Boolean(selectedWorkout);
+  const sessions = sessionsForDate(state.selectedDate);
+  const active = state.activeSession?.date === state.selectedDate ? state.activeSession : null;
+  const hasEntries = sessions.length > 0 || Boolean(active);
 
-  elements.detailEmpty.classList.toggle("hidden", hasSelection);
-  elements.detailView.classList.toggle("hidden", !hasSelection);
+  elements.detailEmpty.classList.toggle("hidden", hasEntries);
+  elements.detailView.classList.toggle("hidden", !hasEntries);
 
-  if (!selectedWorkout) {
+  if (!hasEntries) {
     elements.detailView.innerHTML = "";
     return;
   }
 
-  elements.detailView.innerHTML = `
-    <div class="detail-header">
-      <div>
-        <h3>${formatDate(selectedWorkout.date)}</h3>
-        <p class="detail-subtext">${selectedWorkout.exercises.length}種目</p>
-      </div>
-      <button id="delete-workout" class="ghost-button" type="button">削除</button>
-    </div>
-    ${
-      selectedWorkout.note
-        ? `<p class="detail-note">${escapeHtml(selectedWorkout.note)}</p>`
-        : '<p class="detail-note">メモはありません。</p>'
-    }
-    ${selectedWorkout.exercises
-      .map(
-        (exercise) => `
-          <section class="detail-exercise">
-            <h3>${escapeHtml(exercise.name)}</h3>
-            <div class="detail-sets">
-              ${exercise.sets
-                .map(
-                  (set, index) =>
-                    `<span class="detail-pill">${index + 1}セット目 ${set.weight}kg × ${set.reps}回</span>`
-                )
-                .join("")}
-            </div>
-          </section>
-        `
-      )
-      .join("")}
-  `;
+  const parts = [];
 
-  elements.detailView.querySelector("#delete-workout").addEventListener("click", () => {
-    const confirmed = window.confirm("このワークアウト記録を削除しますか？");
-    if (!confirmed) return;
+  if (active) {
+    parts.push(`
+      <section class="detail-session live-session">
+        <div class="detail-header">
+          <div>
+            <h3>${formatDateLabel(active.date)}</h3>
+            <p class="detail-subtext">進行中のセッション</p>
+          </div>
+          <span class="mini-chip">LIVE</span>
+        </div>
+        <p class="detail-note">開始: ${formatTime(active.startAt)}</p>
+        <p class="detail-note">${escapeHtml(active.note || "メモなし")}</p>
+      </section>
+    `);
+  }
 
-    state.workouts = state.workouts.filter((workout) => workout.id !== selectedWorkout.id);
-    state.selectedWorkoutId = state.workouts[0]?.id ?? null;
-    saveWorkouts();
-    render();
+  sessions.forEach((session) => {
+    parts.push(`
+      <section class="detail-session">
+        <div class="detail-header">
+          <div>
+            <h3>${formatDateLabel(session.date)}</h3>
+            <p class="detail-subtext">${formatTime(session.startAt)} - ${formatTime(session.endAt)}</p>
+          </div>
+          <button class="ghost-button delete-session" type="button" data-id="${session.id}">削除</button>
+        </div>
+        <div class="detail-metrics">
+          <span class="detail-pill">開始 ${formatTime(session.startAt)}</span>
+          <span class="detail-pill">終了 ${formatTime(session.endAt)}</span>
+          <span class="detail-pill">${formatMinutes(session.durationMinutes)}</span>
+        </div>
+        <p class="detail-note">${escapeHtml(session.note || "メモなし")}</p>
+      </section>
+    `);
+  });
+
+  elements.detailView.innerHTML = parts.join("");
+  elements.detailView.querySelectorAll(".delete-session").forEach((button) => {
+    button.addEventListener("click", () => deleteSession(button.dataset.id));
   });
 }
 
-function updatePreviousRecord(nameInput, target) {
-  const name = nameInput.value.trim().toLowerCase();
-  if (!name) {
-    target.classList.add("hidden");
-    target.textContent = "";
-    return;
-  }
+function deleteSession(id) {
+  const confirmed = window.confirm("この記録を削除しますか？");
+  if (!confirmed) return;
 
-  const lastRecord = findPreviousRecord(name);
-  if (!lastRecord) {
-    target.classList.add("hidden");
-    target.textContent = "";
-    return;
-  }
-
-  const setSummary = lastRecord.sets.map((set) => `${set.weight}kg×${set.reps}`).join(" / ");
-  target.textContent = `前回: ${formatDate(lastRecord.date)} - ${setSummary}`;
-  target.classList.remove("hidden");
+  state.sessions = state.sessions.filter((session) => session.id !== id);
+  saveSessions();
+  render();
 }
 
-function findPreviousRecord(exerciseName) {
-  for (const workout of state.workouts) {
-    const match = workout.exercises.find((exercise) => exercise.name.trim().toLowerCase() === exerciseName);
-    if (match) {
-      return {
-        date: workout.date,
-        sets: match.sets,
-      };
-    }
+function sessionsForDate(dateKey) {
+  if (!dateKey) return [];
+  return state.sessions.filter((session) => session.date === dateKey);
+}
+
+function buildStampMap(monthDate) {
+  const key = monthKey(monthDate);
+  const map = new Map();
+
+  state.sessions.forEach((session) => {
+    if (monthKey(new Date(session.date)) !== key) return;
+    map.set(session.date, (map.get(session.date) ?? 0) + 1);
+  });
+
+  if (state.activeSession && monthKey(new Date(state.activeSession.date)) === key) {
+    map.set(state.activeSession.date, (map.get(state.activeSession.date) ?? 0) + 1);
   }
-  return null;
+
+  return map;
 }
 
-function summarizeWorkout(workout) {
-  const names = workout.exercises.map((exercise) => exercise.name).join(" / ");
-  return names || "種目なし";
+function findLatestDate() {
+  const latest = state.sessions[0]?.date;
+  return latest ?? null;
 }
 
-function formatDate(value) {
-  const date = new Date(`${value}T00:00:00`);
+function updateClock() {
+  const now = new Date();
+  elements.liveDate.textContent = new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(now);
+
+  elements.liveTime.textContent = new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(now);
+
+  if (state.activeSession) {
+    elements.durationTime.textContent = formatElapsed(state.activeSession.startAt);
+  }
+}
+
+function formatMonthTitle(date) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+  }).format(date);
+}
+
+function formatDateLabel(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00`);
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "short",
     day: "numeric",
+    weekday: "short",
   }).format(date);
 }
 
-function getToday() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const local = new Date(now.getTime() - offset * 60 * 1000);
-  return local.toISOString().slice(0, 10);
+function formatTime(value) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatElapsed(startAt) {
+  const start = new Date(startAt).getTime();
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - start) / 60000));
+  return formatMinutes(diffMinutes);
+}
+
+function formatMinutes(totalMinutes) {
+  if (!Number.isFinite(totalMinutes)) return "--";
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}分`;
+  return `${hours}時間${minutes}分`;
+}
+
+function formatDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function escapeHtml(value) {
