@@ -16,6 +16,8 @@ const elements = {
   startTime: document.querySelector("#start-time"),
   finishTime: document.querySelector("#finish-time"),
   durationTime: document.querySelector("#duration-time"),
+  bodyweightField: document.querySelector("#bodyweight-field"),
+  bodyweightInput: document.querySelector("#bodyweight-input"),
   exercisePanel: document.querySelector("#exercise-panel"),
   addExercise: document.querySelector("#add-exercise"),
   exerciseList: document.querySelector("#exercise-list"),
@@ -38,6 +40,7 @@ function bootstrap() {
 
   elements.startButton.addEventListener("click", startSession);
   elements.finishButton.addEventListener("click", finishSession);
+  elements.bodyweightInput.addEventListener("input", handleBodyweightInput);
   elements.addExercise.addEventListener("click", () => addExerciseItem());
   elements.historySelect.addEventListener("change", handleHistoryChange);
 
@@ -87,9 +90,11 @@ function startSession() {
     id: crypto.randomUUID(),
     date: formatDateKey(now),
     startAt: now.toISOString(),
+    bodyweight: "",
     exercises: [],
   };
 
+  elements.bodyweightInput.value = "";
   elements.exerciseList.innerHTML = "";
   addExerciseItem();
   saveActiveSession();
@@ -109,6 +114,7 @@ function finishSession() {
     startAt: state.activeSession.startAt,
     endAt: now.toISOString(),
     durationMinutes,
+    bodyweight: toNullableNumber(state.activeSession.bodyweight),
     exercises: serializeExercises(),
   };
 
@@ -144,6 +150,12 @@ function addExerciseItem(exercise = null) {
   const initialSets = exercise?.sets?.length ? exercise.sets : [{ weight: "", reps: "" }];
   initialSets.forEach((set) => addSetRow(setList, set));
   elements.exerciseList.appendChild(fragment);
+}
+
+function handleBodyweightInput(event) {
+  if (!state.activeSession) return;
+  state.activeSession.bodyweight = event.target.value;
+  saveActiveSession();
 }
 
 function addSetRow(container, set = null) {
@@ -209,17 +221,20 @@ function renderSessionCard() {
   const active = state.activeSession;
   elements.startButton.disabled = Boolean(active);
   elements.finishButton.disabled = !active;
+  elements.bodyweightField.classList.toggle("hidden", !active);
   elements.exercisePanel.classList.toggle("hidden", !active);
 
   if (!active) {
     elements.startTime.textContent = "--:--";
     elements.finishTime.textContent = "--:--";
     elements.durationTime.textContent = "--";
+    elements.bodyweightInput.value = "";
     elements.exerciseList.innerHTML = "";
     return;
   }
 
   renderExerciseEditor(active.exercises ?? []);
+  elements.bodyweightInput.value = active.bodyweight ?? "";
   elements.startTime.textContent = formatTime(active.startAt);
   elements.finishTime.textContent = "--:--";
   elements.durationTime.textContent = formatElapsed(active.startAt);
@@ -277,6 +292,7 @@ function renderHistoryDetail() {
     <div class="detail-row"><span>開始</span><strong>${formatTime(session.startAt)}</strong></div>
     <div class="detail-row"><span>終了</span><strong>${formatTime(session.endAt)}</strong></div>
     <div class="detail-row"><span>時間</span><strong>${formatMinutes(session.durationMinutes)}</strong></div>
+    <div class="detail-row"><span>体重</span><strong>${formatBodyweight(session.bodyweight)}</strong></div>
     ${renderExerciseSummary(session.exercises ?? [])}
     <button class="danger-button" id="delete-session-button" type="button">この記録を削除</button>
   `;
@@ -354,6 +370,16 @@ function formatMinutes(totalMinutes) {
   const minutes = totalMinutes % 60;
   if (hours === 0) return `${minutes}分`;
   return `${hours}時間${minutes}分`;
+}
+
+function formatBodyweight(value) {
+  if (value === null || value === undefined || value === "") return "未入力";
+  return `${value}kg`;
+}
+
+function toNullableNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  return Number(value);
 }
 
 function formatDateKey(date) {

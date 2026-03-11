@@ -97,6 +97,7 @@ function renderSummary() {
     <div class="detail-row"><span>最新最高重量</span><strong>${latest}kg</strong></div>
     <div class="detail-row"><span>成長率</span><strong>${growthRate.toFixed(1)}%</strong></div>
     <div class="detail-row"><span>記録回数</span><strong>${points.length}回</strong></div>
+    <div class="detail-row"><span>最新体重</span><strong>${formatBodyweight(points[points.length - 1].bodyweight)}</strong></div>
   `;
 }
 
@@ -170,7 +171,7 @@ function buildPoints(exerciseName) {
       const exercise = (session.exercises ?? []).find((entry) => entry.name === exerciseName);
       if (!exercise) return null;
       const maxWeight = Math.max(...(exercise.sets ?? []).map((set) => Number(set.weight) || 0), 0);
-      return { date: session.date, maxWeight };
+      return { date: session.date, maxWeight, bodyweight: session.bodyweight };
     })
     .filter(Boolean);
 }
@@ -178,4 +179,9 @@ function buildPoints(exerciseName) {
 function formatShortDate(dateKey) {
   const date = new Date(`${dateKey}T00:00:00`);
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function formatBodyweight(value) {
+  if (value === null || value === undefined || value === "") return "未入力";
+  return `${value}kg`;
 }
