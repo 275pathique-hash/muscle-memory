@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workout History</title>
+    <meta name="theme-color" content="#c55b2d" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Workout History</p>
+        <h1>過去トレーニング選択</h1>
+        <p class="hero-copy">過去のトレーニング記録を選んで、内容確認や削除ができます。</p>
+        <div class="hero-links">
+          <a class="hero-link" href="./index.html">ホームへ戻る</a>
+          <a class="hero-link" href="./exercise.html">種目ごとの成長を見る</a>
+        </div>
+      </header>
+
+      <main class="single-layout">
+        <section class="panel history-panel">
+          <p class="section-label">History</p>
+          <h2>過去トレーニング選択</h2>
+          <label class="field">
+            <span>記録を選ぶ</span>
+            <select id="history-select"></select>
+          </label>
+          <div id="history-empty" class="empty-state">まだ過去のトレーニング記録がありません。</div>
+          <div id="history-detail" class="history-detail hidden"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./history.js?v=8"></script>
+  </body>
+</html>

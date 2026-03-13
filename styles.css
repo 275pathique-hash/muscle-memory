@@ -77,6 +77,12 @@ h2 {
   margin-top: 10px;
 }
 
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .hero-link {
   display: inline-flex;
   margin-top: 14px;
@@ -87,6 +93,12 @@ h2 {
 .layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.single-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 
@@ -252,7 +264,8 @@ input {
   margin-top: 10px;
 }
 
-.simple-set-row input {
+.simple-set-row input,
+.simple-set-row select {
   flex: 1;
 }
 
@@ -275,6 +288,7 @@ input {
   }
 
   .layout,
+  .single-layout,
   .analysis-layout {
     grid-template-columns: 1fr;
   }
